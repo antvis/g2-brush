@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="geometry" content="diagram">
+  <link rel="stylesheet" href="./assets/common.css">
+  <title>Arc Diagram</title>
+</head>
+
+<body>
+<div id="canvas"></div>
+<script src="./assets/jquery-3.2.1.min.js"></script>
+<script src="./assets/data-set.min.js"></script>
+<script src="./assets/g2.min.js"></script>
+<script src="../build/g2-plugin-brush.js"></script>
+<script>
+$.getJSON('https://gw.alipayobjects.com/os/rmsportal/iUHMELvZgQpHqaSdsZvF.json', data => {
+  const chart = new G2.Chart({
+    container: 'canvas',
+    width: 800,
+    height: 400
+  });
+  chart.source(data);
+  chart.point().position('Horsepower*Miles_per_Gallon');
+  chart.render();
+
+
+  new Brush(chart, 'polygon')
+});
+</script>
+</body>
+
+</html>
+
