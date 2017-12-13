@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="geometry" content="diagram">
+  <link rel="stylesheet" href="./assets/common.css">
+  <title>Brush with highlight</title>
+</head>
+
+<body>
+<div id="canvas"></div>
+<script src="./assets/jquery-3.2.1.min.js"></script>
+<script src="./assets/data-set.min.js"></script>
+<script src="./assets/g2.min.js"></script>
+<script src="../build/g2-brush.js"></script>
+<script>
+  $.getJSON('./data/iris.json', function(data) {
+    const chart = new G2.Chart({
+      container: 'canvas',
+      forceFit: true,
+      height: window.innerHeight
+    });
+
+    chart.source(data, {
+      Species: {
+        sync: true
+      }
+    });
+    chart.facet('matrix', {
+      fields: [ 'SepalLength', 'SepalWidth', 'PetalLength', 'PetalWidth' ],
+      eachView(view, facet) {
+        view.axis(facet.colField, {
+          label: null,
+          line: {
+            lineWidth: 1,
+            stroke: '#000'
+          },
+          tickLine: {
+            lineWidth: 1,
+            stroke: '#000',
+            length: 4
+          }
+        });
+        view.axis(facet.rowField, {
+          label: null,
+          line: {
+            lineWidth: 1,
+            stroke: '#000'
+          },
+          tickLine: {
+            lineWidth: 1,
+            stroke: '#000',
+            length: 4
+          }
+        });
+        if (facet.rowIndex === facet.colIndex) {
+          view.point()
+            .position(facet.colField + '*' + facet.colField)
+              .color('Species', ['#880000', '#008800', '#000088'])
+              .opacity(0.5)
+              .shape('circle')
+              .size(3);
+        } else {
+          view.point()
+            .position([ facet.colField, facet.rowField ])
+              .color('Species', ['#880000', '#008800', '#000088'])
+              .opacity(0.5)
+              .shape('circle')
+              .size(3);
+        }
+        if ([ 0, 1, 2, 3 ].indexOf(facet.rowIndex) > -1 && facet.colIndex === 0) {
+          view.guide().text({
+            position: [ 3.7, 'median' ],
+            content: facet.rowValue,
+            style: {
+              rotate: -90,
+              fontSize: 12,
+              fill: '#999',
+              textAlign: 'center'
+            }
+          })
+        }
+        if ([ 0, 1, 2, 3 ].indexOf(facet.colIndex) > -1 && facet.rowIndex === 3) {
+          view.guide().text({
+            position: [ 'median', 'min' ],
+            content: facet.colValue,
+            style: {
+              fontSize: 12,
+              fill: '#999',
+              textAlign: 'center'
+            },
+            offsetY: 20
+          })
+        }
+      }
+    });
+    chart.render();
+  });
+</script>
+</body>
+
+</html>
+

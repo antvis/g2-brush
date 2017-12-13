@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="geometry" content="diagram">
+  <link rel="stylesheet" href="./assets/common.css">
+  <title>Filter Shape</title>
+</head>
+
+<body>
+<div id="canvas1"></div>
+<div id="canvas2"></div>
+<script src="./assets/jquery-3.2.1.min.js"></script>
+<script src="./assets/data-set.min.js"></script>
+<script src="./assets/g2.min.js"></script>
+<script src="../build/g2-brush.js"></script>
+<script>
+  $.getJSON('./data/cars.json', function(data) {
+    const chart1 = new G2.Chart({
+      container: 'canvas1',
+      width: 400,
+      height: 400
+    });
+    chart1.source(data);
+    chart1.tooltip(false);
+    chart1.point().position('Horsepower*Miles_per_Gallon');
+    chart1.render();
+
+    // second chart
+    const chart2 = new G2.Chart({
+      container: 'canvas2',
+      width: 400,
+      height: 400
+    });
+    chart2.source(data);
+    chart2.point().position('Acceleration*Displacement');
+    chart2.render();
+
+    new Brush({
+      chart: chart1,
+      onBrushend(ev) {
+        const { data, shapes, x, y } = ev;
+        chart2.filterShape((obj, shape, geom) => {
+          return data.indexOf(obj) > -1;
+        });
+        // this.container.clear();
+        // this.canvas.draw();
+      }
+    });
+
+
+  });
+</script>
+</body>
+
+</html>
+

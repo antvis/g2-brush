@@ -1,17 +1,17 @@
 {
-  "name": "@antv/g2-plugin-brush",
+  "name": "@antv/g2-brush",
   "version": "0.0.1",
   "description": "",
-  "main": "build/g2-plugin-brush.js",
-  "browser": "build/g2-plugin-brush.min.js",
+  "main": "build/g2-brush.js",
+  "browser": "build/g2-brush.min.js",
   "module": "index.js",
   "repository": {
     "type": "git",
-    "url": "git@github.com:antvis/g2-plugin-brush.git"
+    "url": "git@github.com:antvis/g2-brush.git"
   },
   "keywords": [
     "antv",
-    "g2-plugin-brush",
+    "g2-brush",
     "g2PluginBrush"
   ],
   "author": "https://github.com/orgs/antvis/people",
@@ -48,7 +48,7 @@
   "scripts": {
     "build": "webpack",
     "ci": "npm run lint && npm run test",
-    "compress": "uglifyjs --compress --mangle --output dist/g2-plugin-brush.min.js -- build/g2-plugin-brush.js",
+    "compress": "uglifyjs --compress --mangle --output dist/g2-brush.min.js -- build/g2-brush.js",
     "coverage": "npm run coverage-generator && npm run coverage-viewer",
     "coverage-generator": "torch --coverage --renderer --recursive test/unit",
     "coverage-viewer": "torch-coverage",

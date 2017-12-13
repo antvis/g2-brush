@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="geometry" content="diagram">
+  <link rel="stylesheet" href="./assets/common.css">
+  <title>DataSet State</title>
+</head>
+
+<body>
+<div id="canvas1"></div>
+<div id="canvas2"></div>
+<script src="./assets/jquery-3.2.1.min.js"></script>
+<script src="./assets/data-set.min.js"></script>
+<script src="./assets/g2.min.js"></script>
+<script src="../build/g2-brush.js"></script>
+<script>
+  $.getJSON('./data/sp500.json', function(data) {
+    const ds = new DataSet({
+      state: {
+        dates: null
+      }
+    });
+    const dv = ds.createView();
+    dv.source(data)
+      .transform({
+        type: 'filter',
+        callback: obj => {
+          if (ds.state.dates) {
+            return ds.state.dates.indexOf(obj.date) > -1;
+          }
+          return obj;
+        }
+      });
+    const chart1 = new G2.Chart({
+      container: 'canvas1',
+      forceFit: true,
+      height: window.innerHeight * (2 / 3),
+      animate:false
+    });
+    chart1.source(dv, {
+      date: {
+        tickCount: 10
+      }
+    });
+    chart1.area().position('date*price');
+    chart1.render();
+
+    // second chart
+    const chart2 = new G2.Chart({
+      container: 'canvas2',
+      forceFit: true,
+      height: window.innerHeight * (1 / 3)
+    });
+    chart2.source(data, {
+      date: {
+        tickCount: 10
+      }
+    });
+    chart2.tooltip(false);
+    chart2.area().position('date*price').active(false);
+    chart2.render();
+
+    new Brush({
+      chart: chart2,
+      type: 'X',
+      onBrushend(ev) {
+        const { date } = ev;
+        console.log(ev)
+        ds.setState('dates', date);
+      }
+    });
+
+
+  });
+</script>
+</body>
+
+</html>
+

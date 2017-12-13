@@ -3,7 +3,7 @@ const resolve = require('path').resolve;
 
 module.exports = {
   entry: {
-    'g2-plugin-brush': './index.js'
+    'g2-brush': './index.js'
   },
   output: {
     filename: '[name].js',

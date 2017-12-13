@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="geometry" content="diagram">
+  <link rel="stylesheet" href="./assets/common.css">
+  <title>Basic</title>
+</head>
+
+<body>
+<div id="canvas"></div>
+<div style="width: 100%;text-align: center;">
+  <button id="x">X 框选</button>
+  <button id="y">Y 框选</button>
+  <button id="xy">XY 框选</button>
+</div>
+<script src="./assets/jquery-3.2.1.min.js"></script>
+<script src="./assets/data-set.min.js"></script>
+<script src="./assets/g2.min.js"></script>
+<script src="../build/g2-brush.js"></script>
+<script>
+  $.getJSON('./data/avg-temp.json', function(data) {
+    const { DataView } = DataSet;
+    const dv = new DataView();
+    dv.source(data)
+      .transform({
+        type: 'fold',
+        key: 'city',
+        value: 'value',
+        fields: ['New York', 'San Francisco', 'Austin']
+      });
+    var chart = new G2.Chart({
+      id: 'canvas',
+      forceFit: true,
+      height: 400,
+      padding: [60, 30, 30]
+    });
+    chart.source(dv, {
+      date: {
+        type: 'time'
+      },
+      value: {
+        alias: 'Temperature, ºF'
+      }
+    });
+    chart.legend({
+      position: 'top'
+    });
+    chart.axis('date', {
+      line: {
+        stroke: '#000'
+      },
+      tickLine: {
+        stroke: '#000',
+        value: 6 // 刻度线长度
+      },
+      label: {
+        textStyle: {
+          textAlign: 'start'
+        }
+      }
+    });
+    chart.axis('value', {
+      tickLine: {
+        stroke: '#000',
+        value: 6 // 刻度线长度
+      },
+      label: {
+        textStyle: {
+          fill: '#000'
+        }
+      },
+      line: {
+        stroke: '#000'
+      },
+      grid: null
+    });
+    chart.line().position('date*value').color('city').shape('spline').size(2);
+    chart.render();
+    // 监听双击事件，这里用于复原图表
+    chart.on('plotdblclick', function(ev) {
+      chart.get('options').filters = {};
+      chart.repaint();
+    });
+
+
+    let brush;
+    $('#x').click(() => {
+      if (brush) {
+        brush.setMode('x');
+      } else {
+        brush = new Brush({
+          chart,
+          type: 'X',
+          style: {
+            fill: '#ccc',
+            fillOpacity: 0.4
+          }
+        });
+      }
+    });
+    $('#xy').click(() => {
+      if (brush) {
+        brush.setMode('xy');
+      } else {
+        brush = new Brush({
+          chart,
+          type: 'XY',
+          style: {
+            fill: '#ccc',
+            fillOpacity: 0.4
+          }
+        });
+      }
+    });
+    $('#y').click(() => {
+      if (brush) {
+        brush.setMode('y');
+      } else {
+        brush = new Brush({
+          chart,
+          type: 'Y',
+          style: {
+            fill: '#ccc',
+            fillOpacity: 0.4
+          }
+        });
+      }
+    });
+  });
+</script>
+</body>
+
+</html>
+

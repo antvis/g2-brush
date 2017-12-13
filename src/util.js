@@ -1,4 +1,3 @@
-
 function _mix(dist, obj) {
   for (const k in obj) {
     if (obj.hasOwnProperty(k) && k !== 'constructor' && obj[k] !== undefined) {
@@ -72,6 +71,32 @@ const Util = {
    */
   getWrapBehavior(obj, action) {
     return obj['_wrap_' + action];
+  },
+  /**
+   * 判断点是否在多边形内
+   * @param  {Array}  point   要判断的点
+   * @param  {Array}  polygon 组成多边形的点坐标
+   * @return {Boolean}        true 为在内部，false 则不在
+   */
+  isInside(point, polygon) {
+    // From: https://github.com/substack/point-in-polygon.git
+    // Using Ray casting algorithm
+    const x = point[0];
+    const y = point[1];
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const xi = polygon[i][0];
+      const yi = polygon[i][1];
+      const xj = polygon[j][0];
+      const yj = polygon[j][1];
+
+      const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+      if (intersect) {
+        inside = !inside;
+      }
+    }
+
+    return inside;
   }
 };
 
