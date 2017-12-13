@@ -84,26 +84,35 @@ class Brush {
     }
 
     const chart = this.chart;
-    this.canvas = chart.get('canvas');
-    this.plotRange = chart.get('plotRange');
-    this.frontPlot = chart.get('frontPlot');
-    const xScales = chart._getScales('x');
-    const yScales = chart._getScales('y');
-    this.xScale = this.xField ? xScales[this.xField] : chart.getXScale();
-    this.yScale = this.yField ? yScales[this.yField] : chart.getYScales()[0];
+    if (chart) {
+      const coord = chart.get('coord');
 
-    this._bindEvent();
+      this.canvas = chart.get('canvas');
+      this.plot = {
+        start: coord.start,
+        end: coord.end
+      }
+      // this.plotRange = chart.get('plotRange');
+
+      this.frontPlot = chart.get('frontPlot');
+      const xScales = chart._getScales('x');
+      const yScales = chart._getScales('y');
+      this.xScale = this.xField ? xScales[this.xField] : chart.getXScale();
+      this.yScale = this.yField ? yScales[this.yField] : chart.getYScales()[0];
+
+      this._bindEvent();
+    }
   }
 
   _bindEvent() {
     const me = this;
-    const { chart, frontPlot, type, plotRange } = me;
+    const { chart, frontPlot, type, plot } = me;
     chart.on('mousedown', ev => {
       const { x, y } = ev;
       let container = me.container;
       if (me.inPlot) {
-        const { tl, br } = plotRange;
-        if (x < tl.x || x > br.x || y < tl.y || y > br.y) {
+        const { start, end } = plot;
+        if (x < start.x || x > end.x || y < end.y || y > start.y) {
           return;
         }
       }
@@ -143,12 +152,12 @@ class Brush {
 
   _onCanvasMouseMove(ev) {
     const me = this;
-    const { isBrushing, type, plotRange, startPoint } = me;
+    const { isBrushing, type, plot, startPoint } = me;
     if (!isBrushing) {
       return;
     }
     const canvas = me.canvas;
-    const { tl, tr, bl } = plotRange;
+    const { start, end } = plot;
     let polygonPath = me.polygonPath;
     const polygonPoints = me.polygonPoints;
     let brushShape = me.brushShape;
@@ -168,15 +177,15 @@ class Brush {
     let rectHeight;
 
     if (type === 'Y') {
-      rectStartX = tl.x;
+      rectStartX = start.x;
       rectStartY = (currentPoint.y >= startPoint.y) ? startPoint.y : currentPoint.y;
-      rectWidth = Math.abs(tl.x - tr.x);
+      rectWidth = Math.abs(start.x - end.x);
       rectHeight = Math.abs(startPoint.y - currentPoint.y);
     } else if (type === 'X') {
       rectStartX = (currentPoint.x >= startPoint.x) ? startPoint.x : currentPoint.x;
-      rectStartY = tl.y;
+      rectStartY = end.y;
       rectWidth = Math.abs(startPoint.x - currentPoint.x);
-      rectHeight = Math.abs(tl.y - bl.y);
+      rectHeight = Math.abs(end.y - start.y);
     } else if (type === 'XY') {
       if (currentPoint.x >= startPoint.x) {
         rectStartX = startPoint.x;
@@ -245,6 +254,7 @@ class Brush {
   _onCanvasMouseUp(ev) {
     const me = this;
     const { canvas, type, startPoint, chart, container, xScale, yScale } = me;
+
     me.onMouseMoveListener.remove();
     me.onMouseUpListener.remove();
     me.isBrushing = false;
@@ -289,7 +299,8 @@ class Brush {
     const xValues = [];
     const yValues = [];
     const selectedData = [];
-    const geoms = chart.getAllGeoms();
+    // const geoms = chart.getAllGeoms();
+    const geoms = chart.get('geoms');
     geoms.map(geom => {
       const shapes = geom.getShapes();
       const coord = geom.get('coord');
@@ -315,18 +326,6 @@ class Brush {
       });
       return geom;
     });
-
-    // calculate the selected values
-/*    const xValues = [];
-    const yValues = [];
-    const selectedData = [];
-    selectedShapes.length && selectedShapes.map(selectedShape => {
-      const origin = selectedShape.get('origin')._origin;
-      selectedData.push(origin);
-      xValues.push(origin[xScale.field]);
-      yValues.push(origin[yScale.field]);
-      return selectedShape;
-    });*/
 
     if (me.onBrushend) {
       me.onBrushend({
@@ -365,20 +364,20 @@ class Brush {
   }
 
   _limitCoordScope(point) {
-    const { plotRange } = this;
-    const { tl, br } = plotRange;
+    const { plot } = this;
+    const { start, end } = plot;
 
-    if (point.x < tl.x) {
-      point.x = tl.x;
+    if (point.x < start.x) {
+      point.x = start.x;
     }
-    if (point.x > br.x) {
-      point.x = br.x;
+    if (point.x > end.x) {
+      point.x = end.x;
     }
-    if (point.y < tl.y) {
-      point.y = tl.y;
+    if (point.y < end.y) {
+      point.y = end.y;
     }
-    if (point.y > br.y) {
-      point.y = br.y;
+    if (point.y > start.y) {
+      point.y = start.y;
     }
     return point;
   }
@@ -389,8 +388,17 @@ class Brush {
     }
 
     this.type = type.toUpperCase();
-    this.brushShape = null;
+    // this.brushShape = null;
   }
+
+/*  setChart(chart) {
+    if (!chart) {
+      return;
+    }
+    this._init({
+      chart
+    });
+  }*/
 }
 
 module.exports = Brush;
