@@ -43,8 +43,8 @@
       chart: chart1,
       canvas: chart1.get('canvas'),
       onBrushend(ev) {
-        const { data, shapes, x, y } = ev;
-        chart2.filterShape((obj, shape, geom) => {
+        const { data } = ev;
+        chart2.filterShape(obj => {
           return data.indexOf(obj) > -1;
         });
         // this.container.clear();

@@ -39,7 +39,7 @@
       container: 'canvas1',
       forceFit: true,
       height: window.innerHeight * (2 / 3),
-      animate:false
+      animate: false
     });
     chart1.source(dv, {
       date: {
@@ -70,7 +70,7 @@
       type: 'X',
       onBrushend(ev) {
         const { date } = ev;
-        console.log(ev)
+        console.log(ev);
         ds.setState('dates', date);
       }
     });

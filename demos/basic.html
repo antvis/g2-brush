@@ -30,13 +30,13 @@
         type: 'fold',
         key: 'city',
         value: 'value',
-        fields: ['New York', 'San Francisco', 'Austin']
+        fields: [ 'New York', 'San Francisco', 'Austin' ]
       });
     const chart = new G2.Chart({
       id: 'canvas',
       forceFit: true,
       height: 400,
-      padding: [60, 30, 30]
+      padding: [ 60, 30, 30 ]
     });
     chart.source(dv, {
       date: {
@@ -78,26 +78,21 @@
       },
       grid: null
     });
-    chart.line().position('date*value').color('city').shape('spline').size(2);
+    chart.line()
+      .position('date*value')
+      .color('city')
+      .shape('spline')
+      .size(2);
     chart.render();
 
-    const canvas = $('#canvas')[0];
-    let brush = new Brush({
+    const brush = new Brush({
       // chart,
       canvas: chart.get('canvas'),
       style: {
         fill: '#ccc',
         fillOpacity: 0.4
       },
-      chart,
-      // // onBrushstart() {
-      // //   this.chart = chart;
-      // //   this.xScale = chart.get('scales').date;
-      // //   this.yScale = chart.get('scales').value;
-      // // },
-      // onBrushmove() {
-      //   chart.hideTooltip();
-      // },
+      chart
     });
     $('#x').click(() => {
       brush.setMode('x');

@@ -6,6 +6,7 @@
     "$": true,
     "DataSet": true,
     "G2": true,
+    "Brush": true,
     "_": true
   },
   "parser": "babel-eslint",

@@ -60,7 +60,7 @@
         if (facet.rowIndex === facet.colIndex) {
           view.point()
             .position(facet.colField + '*' + facet.colField)
-              .color('Species', ['#880000', '#008800', '#000088'])
+              .color('Species', [ '#880000', '#008800', '#000088' ])
               .opacity(0.5)
               .shape('circle')
               .size(3)
@@ -68,7 +68,7 @@
         } else {
           view.point()
             .position([ facet.colField, facet.rowField ])
-              .color('Species', ['#880000', '#008800', '#000088'])
+              .color('Species', [ '#880000', '#008800', '#000088' ])
               .opacity(0.5)
               .shape('circle')
               .size(3)
@@ -84,7 +84,7 @@
               fill: '#999',
               textAlign: 'center'
             }
-          })
+          });
         }
         if ([ 0, 1, 2, 3 ].indexOf(facet.colIndex) > -1 && facet.rowIndex === 3) {
           view.guide().text({
@@ -96,50 +96,51 @@
               textAlign: 'center'
             },
             offsetY: 20
-          })
+          });
         }
       }
     });
     chart.render();
-    const views = chart.get('views');
+    // const views = chart.get('views');
     // G2.Util.each(chart.get('views'), view => {
-        const brush = new Brush({
-          canvas: chart.get('canvas'),
-          onBrushstart(ev) {
-            $('#g2-tootip').hide();
-            const { x, y } = ev;
-            const views = chart.getViewsByPoint({ x, y });
-            if (views.length > 1) {
-              this.chart = views[1];
-              const coord = views[1].get('coord');
-              this.plot = {
-                start: coord.start,
-                end: coord.end
-              };
-              this.xScale = views[1].getXScale();
-              this.yScale = views[1].getYScales()[0];
-            }
-          },
-          onBrushmove() {
-          },
-          onBrushend(ev) {
-            $('#g2-tootip').show();
-            this.container.clear();
-            const { shapes, data } = ev;
-            chart.eachShape((record, shape, geom, view) => {
-              if (!shape.get('_originAttrs')) {
-                shape.set('_originAttrs', Util.cloneDeep(shape.__attrs)); // 缓存原来的属性
-              }
-              if (data.indexOf(record) === -1) {
-                shape.attr('fill', '#ccc');
-              } else {
-                const originAttrs = shape.get('_originAttrs');
-                shape.__attrs = Util.cloneDeep(originAttrs);
-              }
-            });
-
+    new Brush({
+      canvas: chart.get('canvas'),
+      onBrushstart(ev) {
+        $('#g2-tootip').hide();
+        const { x, y } = ev;
+        const views = chart.getViewsByPoint({ x, y });
+        if (views.length > 1) {
+          this.chart = views[1];
+          const coord = views[1].get('coord');
+          this.plot = {
+            start: coord.start,
+            end: coord.end
+          };
+          this.xScale = views[1].getXScale();
+          this.yScale = views[1].getYScales()[0];
+        }
+      },
+      onBrushmove(ev) {
+        const { data } = ev;
+        chart.eachShape((record, shape) => {
+          if (!shape.get('_originAttrs')) {
+            shape.set('_originAttrs', Util.cloneDeep(shape.__attrs)); // 缓存原来的属性
+          }
+          if (data.indexOf(record) === -1) {
+            shape.attr('fill', '#ccc');
+          } else {
+            const originAttrs = shape.get('_originAttrs');
+            shape.__attrs = Util.cloneDeep(originAttrs);
           }
         });
+      },
+      onBrushend() {
+        $('#g2-tootip').show();
+
+            // this.container.clear();
+            // this.canvas.draw;
+      }
+    });
     // });
   });
 </script>

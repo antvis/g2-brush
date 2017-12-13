@@ -89,8 +89,9 @@ class Brush {
       canvas.get('children').map(child => {
         if (child.get('type') === 'plotBack') {
           plotRange = child.get('plotRange');
-          return;
+          return false;
         }
+        return child;
       });
       this.plot = {
         start: plotRange.bl,
@@ -106,7 +107,7 @@ class Brush {
       this.plot = {
         start: coord.start,
         end: coord.end
-      }
+      };
       const xScales = chart._getScales('x');
       const yScales = chart._getScales('y');
       this.xScale = this.xField ? xScales[this.xField] : chart.getXScale();
@@ -123,7 +124,7 @@ class Brush {
       const startPoint = {
         x: x / pixelRatio,
         y: y / pixelRatio
-      }
+      };
       if (me.onBrushstart) {
         me.onBrushstart(startPoint); // 用户自定义了 brush start 事件
       }
@@ -164,9 +165,56 @@ class Brush {
     this.onMouseUpListener = Util.addEventListener(canvasDOM, 'mouseup', Util.wrapBehavior(this, '_onCanvasMouseUp'));
   }
 
+  _getSelected(polygonPoints) {
+    const { chart, xScale, yScale } = this;
+    const selectedShapes = [];
+    const xValues = [];
+    const yValues = [];
+    const selectedData = [];
+    if (chart) {
+      // const geoms = chart.getAllGeoms();
+      const geoms = chart.get('geoms');
+      geoms.map(geom => {
+        const shapes = geom.getShapes();
+        const coord = geom.get('coord');
+        shapes.map(shape => {
+          let shapeData = shape.get('origin');
+          if (!Array.isArray(shapeData)) { // 线图、区域图等
+            shapeData = [ shapeData ];
+          }
+
+          shapeData.map(each => {
+            const transPoint = coord.applyMatrix(each.x, each.y, 1);
+            if (Util.isInside([ transPoint[0], transPoint[1] ], polygonPoints)) {
+              selectedShapes.push(shape);
+              const origin = each._origin;
+              selectedData.push(origin);
+              xScale && xValues.push(origin[xScale.field]);
+              yScale && yValues.push(origin[yScale.field]);
+            }
+            return each;
+          });
+
+          return shape;
+        });
+        return geom;
+      });
+    }
+    this.shapes = selectedShapes;
+    this.xValues = xValues;
+    this.yValues = yValues;
+    this.data = selectedData;
+    return {
+      data: selectedData,
+      xValues,
+      yValues,
+      shapes: selectedShapes
+    };
+  }
+
   _onCanvasMouseMove(ev) {
     const me = this;
-    const { isBrushing, type, plot, startPoint } = me;
+    const { isBrushing, type, plot, startPoint, xScale, yScale } = me;
 
     if (!isBrushing) {
       return;
@@ -174,7 +222,7 @@ class Brush {
     const canvas = me.canvas;
     const { start, end } = plot;
     let polygonPath = me.polygonPath;
-    const polygonPoints = me.polygonPoints;
+    let polygonPoints = me.polygonPoints;
     let brushShape = me.brushShape;
     const container = me.container;
     const { offsetX, offsetY } = ev;
@@ -215,7 +263,7 @@ class Brush {
       polygonPath += `L ${currentPoint.x} ${currentPoint.y}`;
       polygonPoints.push([ currentPoint.x, currentPoint.y ]);
       me.polygonPath = polygonPath;
-      me.polygonPoints = polygonPoints;
+      // me.polygonPoints = polygonPoints;
       if (!brushShape) {
         brushShape = container.addShape('path', {
           attrs: Util.mix(me.style, {
@@ -246,23 +294,41 @@ class Brush {
           height: rectHeight
         }));
       }
+      polygonPoints = (brushShape && !brushShape.get('destroyed')) ? [
+        [ brushShape.attr('x'), brushShape.attr('y') ],
+        [ brushShape.attr('x') + brushShape.attr('width'), brushShape.attr('y') ],
+        [ brushShape.attr('x') + brushShape.attr('width'), brushShape.attr('y') + brushShape.attr('height') ],
+        [ brushShape.attr('x'), brushShape.attr('y') + brushShape.attr('height') ],
+        [ brushShape.attr('x'), brushShape.attr('y') ]
+      ] : [];
     }
 
     me.brushShape = brushShape;
+    me.polygonPoints = polygonPoints;
+
 
     canvas.draw();
     ev.cancelBubble = true;
     ev.returnValue = false;
-
+    const { data, shapes, xValues, yValues } = me._getSelected(polygonPoints);
     if (me.onBrushmove) {
-      me.onBrushmove({
+      const eventObj = {
+        data,
+        shapes,
         x: currentPoint.x,
         y: currentPoint.y,
         startX: rectStartX,
         startY: rectStartY,
         width: rectWidth,
         height: rectHeight
-      });
+      };
+      if (xScale) {
+        eventObj[xScale.field] = xValues;
+      }
+      if (yScale) {
+        eventObj[yScale.field] = yValues;
+      }
+      me.onBrushmove(eventObj);
     }
   }
 
@@ -288,7 +354,7 @@ class Brush {
     }
     const brushShape = me.brushShape;
     let polygonPath = me.polygonPath;
-    let polygonPoints = me.polygonPoints;
+    const polygonPoints = me.polygonPoints;
 
     if (type === 'POLYGON') {
       polygonPath += 'z';
@@ -300,55 +366,13 @@ class Brush {
       me.polygonPath = polygonPath;
       me.polygonPoints = polygonPoints;
       canvas.draw();
-    } else {
-      // get selected shapes
-      polygonPoints = (brushShape && !brushShape.get('destroyed')) ? [
-        [ brushShape.attr('x'), brushShape.attr('y') ],
-        [ brushShape.attr('x') + brushShape.attr('width'), brushShape.attr('y') ],
-        [ brushShape.attr('x') + brushShape.attr('width'), brushShape.attr('y') + brushShape.attr('height') ],
-        [ brushShape.attr('x'), brushShape.attr('y') + brushShape.attr('height') ],
-        [ brushShape.attr('x'), brushShape.attr('y') ]
-      ] : [];
     }
 
-    const selectedShapes = [];
-    const xValues = [];
-    const yValues = [];
-    const selectedData = [];
-    if (chart) {
-      // const geoms = chart.getAllGeoms();
-      const geoms = chart.get('geoms');
-      geoms.map(geom => {
-        const shapes = geom.getShapes();
-        const coord = geom.get('coord');
-        shapes.map(shape => {
-          let shapeData = shape.get('origin');
-          if (!Array.isArray(shapeData)) { // 线图、区域图等
-            shapeData = [ shapeData ];
-          }
-
-          shapeData.map(each => {
-            const transPoint = coord.applyMatrix(each.x, each.y, 1);
-            if (Util.isInside([ transPoint[0], transPoint[1] ], polygonPoints)) {
-              selectedShapes.push(shape);
-              const origin = each._origin;
-              selectedData.push(origin);
-              xScale && xValues.push(origin[xScale.field]);
-              yScale && yValues.push(origin[yScale.field]);
-            }
-            return each;
-          });
-
-          return shape;
-        });
-        return geom;
-      });
-    }
-
+    const { data, shapes, xValues, yValues } = me;
     if (me.onBrushend) {
       const eventObj = {
-        data: selectedData,
-        shapes: selectedShapes,
+        data,
+        shapes,
         x: currentPoint.x,
         y: currentPoint.y,
         container,
