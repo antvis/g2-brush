@@ -65,6 +65,7 @@
     chart2.render();
 
     new Brush({
+      canvas: chart2.get('canvas'),
       chart: chart2,
       type: 'X',
       onBrushend(ev) {

@@ -15,7 +15,7 @@
 <div style="width: 100%;text-align: center;">
   <button id="x">X 框选</button>
   <button id="y">Y 框选</button>
-  <button id="xy">XY 框选</button>
+  <button id="clear">清除框选</button>
 </div>
 <script src="./assets/jquery-3.2.1.min.js"></script>
 <script src="./assets/data-set.min.js"></script>
@@ -32,7 +32,7 @@
         value: 'value',
         fields: ['New York', 'San Francisco', 'Austin']
       });
-    var chart = new G2.Chart({
+    const chart = new G2.Chart({
       id: 'canvas',
       forceFit: true,
       height: 400,
@@ -80,55 +80,34 @@
     });
     chart.line().position('date*value').color('city').shape('spline').size(2);
     chart.render();
-    // 监听双击事件，这里用于复原图表
-    chart.on('plotdblclick', function(ev) {
-      chart.get('options').filters = {};
-      chart.repaint();
+
+    const canvas = $('#canvas')[0];
+    let brush = new Brush({
+      // chart,
+      canvas: chart.get('canvas'),
+      style: {
+        fill: '#ccc',
+        fillOpacity: 0.4
+      },
+      chart,
+      // // onBrushstart() {
+      // //   this.chart = chart;
+      // //   this.xScale = chart.get('scales').date;
+      // //   this.yScale = chart.get('scales').value;
+      // // },
+      // onBrushmove() {
+      //   chart.hideTooltip();
+      // },
     });
-
-
-    let brush;
     $('#x').click(() => {
-      if (brush) {
-        brush.setMode('x');
-      } else {
-        brush = new Brush({
-          chart,
-          type: 'X',
-          style: {
-            fill: '#ccc',
-            fillOpacity: 0.4
-          }
-        });
-      }
-    });
-    $('#xy').click(() => {
-      if (brush) {
-        brush.setMode('xy');
-      } else {
-        brush = new Brush({
-          chart,
-          type: 'XY',
-          style: {
-            fill: '#ccc',
-            fillOpacity: 0.4
-          }
-        });
-      }
+      brush.setMode('x');
     });
     $('#y').click(() => {
-      if (brush) {
-        brush.setMode('y');
-      } else {
-        brush = new Brush({
-          chart,
-          type: 'Y',
-          style: {
-            fill: '#ccc',
-            fillOpacity: 0.4
-          }
-        });
-      }
+      brush.setMode('y');
+    });
+    $('#clear').click(() => {
+      chart.get('options').filters = {};
+      chart.repaint();
     });
   });
 </script>

@@ -41,6 +41,7 @@
 
     new Brush({
       chart: chart1,
+      canvas: chart1.get('canvas'),
       onBrushend(ev) {
         const { data, shapes, x, y } = ev;
         chart2.filterShape((obj, shape, geom) => {

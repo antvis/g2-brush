@@ -83,47 +83,65 @@ class Brush {
       this.type = 'XY';
     }
 
-    const chart = this.chart;
-    if (chart) {
-      const coord = chart.get('coord');
+    const canvas = this.canvas;
+    if (canvas) {
+      let plotRange;
+      canvas.get('children').map(child => {
+        if (child.get('type') === 'plotBack') {
+          plotRange = child.get('plotRange');
+          return;
+        }
+      });
+      this.plot = {
+        start: plotRange.bl,
+        end: plotRange.tr
+      };
 
-      this.canvas = chart.get('canvas');
+      this._bindEvent();
+    }
+
+    if (this.chart) { // 用户传入 chart
+      const chart = this.chart;
+      const coord = chart.get('coord');
       this.plot = {
         start: coord.start,
         end: coord.end
       }
-      // this.plotRange = chart.get('plotRange');
-
-      this.frontPlot = chart.get('frontPlot');
       const xScales = chart._getScales('x');
       const yScales = chart._getScales('y');
       this.xScale = this.xField ? xScales[this.xField] : chart.getXScale();
       this.yScale = this.yField ? yScales[this.yField] : chart.getYScales()[0];
-
-      this._bindEvent();
     }
   }
 
   _bindEvent() {
     const me = this;
-    const { chart, frontPlot, type, plot } = me;
-    chart.on('mousedown', ev => {
+    const { canvas, type } = me;
+    const pixelRatio = canvas.get('pixelRatio');
+    canvas.on('mousedown', ev => {
       const { x, y } = ev;
+      const startPoint = {
+        x: x / pixelRatio,
+        y: y / pixelRatio
+      }
+      if (me.onBrushstart) {
+        me.onBrushstart(startPoint); // 用户自定义了 brush start 事件
+      }
+
       let container = me.container;
-      if (me.inPlot) {
-        const { start, end } = plot;
-        if (x < start.x || x > end.x || y < end.y || y > start.y) {
+      if (me.plot && me.inPlot) {
+        const { start, end } = me.plot;
+        if (startPoint.x < start.x || startPoint.x > end.x || startPoint.y < end.y || startPoint.y > start.y) {
           return;
         }
       }
-      me.startPoint = {
-        x,
-        y
-      };
+      me.startPoint = startPoint;
       me.polygonPoints = [];
       me.isBrushing = true; // 开始框选
       if (!container) {
-        container = frontPlot.addGroup();
+        container = canvas.addGroup({
+          zIndex: 5 // upper
+        });
         container.initTransform();
       } else {
         container.clear();
@@ -131,12 +149,8 @@ class Brush {
       me.container = container;
 
       if (type === 'POLYGON') { // 不规则筛选
-        me.polygonPath = `M ${x} ${y}`;
-        me.polygonPoints.push([ x, y ]);
-      }
-
-      if (me.onBrushstart) {
-        me.onBrushstart(ev); // 用户自定义了 brush start 事件
+        me.polygonPath = `M ${startPoint.x} ${startPoint.y}`;
+        me.polygonPoints.push([ startPoint.x, startPoint.y ]);
       }
 
       me._bindCanvasEvent();
@@ -153,6 +167,7 @@ class Brush {
   _onCanvasMouseMove(ev) {
     const me = this;
     const { isBrushing, type, plot, startPoint } = me;
+
     if (!isBrushing) {
       return;
     }
@@ -167,7 +182,7 @@ class Brush {
       x: offsetX,
       y: offsetY
     };
-    if (me.inPlot) {
+    if (me.plot && me.inPlot) {
       currentPoint = me._limitCoordScope(currentPoint);
     }
 
@@ -268,7 +283,7 @@ class Brush {
       x: offsetX,
       y: offsetY
     };
-    if (me.inPlot) { // 是否限定在画布内
+    if (me.plot && me.inPlot) { // 是否限定在画布内
       currentPoint = me._limitCoordScope(currentPoint);
     }
     const brushShape = me.brushShape;
@@ -295,65 +310,74 @@ class Brush {
         [ brushShape.attr('x'), brushShape.attr('y') ]
       ] : [];
     }
+
     const selectedShapes = [];
     const xValues = [];
     const yValues = [];
     const selectedData = [];
-    // const geoms = chart.getAllGeoms();
-    const geoms = chart.get('geoms');
-    geoms.map(geom => {
-      const shapes = geom.getShapes();
-      const coord = geom.get('coord');
-      shapes.map(shape => {
-        let shapeData = shape.get('origin');
-        if (!Array.isArray(shapeData)) { // 线图、区域图等
-          shapeData = [ shapeData ];
-        }
-
-        shapeData.map(each => {
-          const transPoint = coord.applyMatrix(each.x, each.y, 1);
-          if (Util.isInside([ transPoint[0], transPoint[1] ], polygonPoints)) {
-            selectedShapes.push(shape);
-            const origin = each._origin;
-            selectedData.push(origin);
-            xValues.push(origin[xScale.field]);
-            yValues.push(origin[yScale.field]);
+    if (chart) {
+      // const geoms = chart.getAllGeoms();
+      const geoms = chart.get('geoms');
+      geoms.map(geom => {
+        const shapes = geom.getShapes();
+        const coord = geom.get('coord');
+        shapes.map(shape => {
+          let shapeData = shape.get('origin');
+          if (!Array.isArray(shapeData)) { // 线图、区域图等
+            shapeData = [ shapeData ];
           }
-          return each;
-        });
 
-        return shape;
+          shapeData.map(each => {
+            const transPoint = coord.applyMatrix(each.x, each.y, 1);
+            if (Util.isInside([ transPoint[0], transPoint[1] ], polygonPoints)) {
+              selectedShapes.push(shape);
+              const origin = each._origin;
+              selectedData.push(origin);
+              xScale && xValues.push(origin[xScale.field]);
+              yScale && yValues.push(origin[yScale.field]);
+            }
+            return each;
+          });
+
+          return shape;
+        });
+        return geom;
       });
-      return geom;
-    });
+    }
 
     if (me.onBrushend) {
-      me.onBrushend({
+      const eventObj = {
         data: selectedData,
         shapes: selectedShapes,
-        [`${xScale.field}`]: xValues,
-        [`${yScale.field}`]: xValues,
         x: currentPoint.x,
         y: currentPoint.y,
         container,
         canvas
-      });
-    } else {
+      };
+      if (xScale) {
+        eventObj[xScale.field] = xValues;
+      }
+      if (yScale) {
+        eventObj[yScale.field] = yValues;
+      }
+
+      me.onBrushend(eventObj);
+    } else if (chart) {
       container.clear(); // clear the brush
       // filter data
       if (type === 'X') {
-        chart.filter(xScale.field, val => {
+        xScale && chart.filter(xScale.field, val => {
           return xValues.indexOf(val) > -1;
         });
       } else if (type === 'Y') {
-        chart.filter(yScale.field, val => {
+        yScale && chart.filter(yScale.field, val => {
           return yValues.indexOf(val) > -1;
         });
       } else {
-        chart.filter(xScale.field, val => {
+        xScale && chart.filter(xScale.field, val => {
           return xValues.indexOf(val) > -1;
         });
-        chart.filter(yScale.field, val => {
+        yScale && chart.filter(yScale.field, val => {
           return yValues.indexOf(val) > -1;
         });
       }
@@ -388,17 +412,7 @@ class Brush {
     }
 
     this.type = type.toUpperCase();
-    // this.brushShape = null;
   }
-
-/*  setChart(chart) {
-    if (!chart) {
-      return;
-    }
-    this._init({
-      chart
-    });
-  }*/
 }
 
 module.exports = Brush;
