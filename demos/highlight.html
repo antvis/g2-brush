@@ -7,11 +7,19 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <meta name="geometry" content="diagram">
   <link rel="stylesheet" href="./assets/common.css">
-  <title>Brush with highlight</title>
+  <title>Scatter Matrix</title>
 </head>
 
 <body>
+<div id="toolbar">
+  <button id="XY">矩形选择</button>
+  <button id="X">横向选择</button>
+  <button id="Y">纵向选择</button>
+  <button id="POLYGON">圈选</button>
+  <button id="clear">清除选择</button>
+</div>
 <div id="canvas"></div>
+
 <script src="./assets/jquery-3.2.1.min.js"></script>
 <script src="./assets/data-set.min.js"></script>
 <script src="./assets/g2.min.js"></script>
@@ -29,6 +37,9 @@
       Species: {
         sync: true
       }
+    });
+    chart.legend({
+      hoverable: false
     });
     chart.facet('matrix', {
       fields: [ 'SepalLength', 'SepalWidth', 'PetalLength', 'PetalWidth' ],
@@ -101,47 +112,95 @@
       }
     });
     chart.render();
-    // const views = chart.get('views');
-    // G2.Util.each(chart.get('views'), view => {
-    new Brush({
-      canvas: chart.get('canvas'),
-      onBrushstart(ev) {
-        $('#g2-tootip').hide();
-        const { x, y } = ev;
-        const views = chart.getViewsByPoint({ x, y });
-        if (views.length > 1) {
-          this.chart = views[1];
-          const coord = views[1].get('coord');
-          this.plot = {
-            start: coord.start,
-            end: coord.end
-          };
-          this.xScale = views[1].getXScale();
-          this.yScale = views[1].getYScales()[0];
-        }
-      },
-      onBrushmove(ev) {
-        const { data } = ev;
-        chart.eachShape((record, shape) => {
-          if (!shape.get('_originAttrs')) {
-            shape.set('_originAttrs', Util.cloneDeep(shape.__attrs)); // 缓存原来的属性
-          }
-          if (data.indexOf(record) === -1) {
-            shape.attr('fill', '#ccc');
-          } else {
-            const originAttrs = shape.get('_originAttrs');
-            shape.__attrs = Util.cloneDeep(originAttrs);
+
+    let brush;
+    function setBrushType(type) {
+      if (!brush) {
+        brush = new Brush({
+          canvas: chart.get('canvas'),
+          dragable: true,
+          type,
+          onBrushstart(ev) {
+            chart.hideTooltip();
+            const { x, y } = ev;
+            const views = chart.getViewsByPoint({ x, y });
+            if (views.length > 1) {
+              this.chart = views[1];
+              const coord = views[1].get('coord');
+              this.plot = {
+                start: coord.start,
+                end: coord.end
+              };
+              this.xScale = views[1].getXScale();
+              this.yScale = views[1].getYScales()[0];
+            }
+          },
+          onBrushmove(ev) {
+            chart.hideTooltip();
+
+            const { data } = ev;
+            chart.eachShape((record, shape) => {
+              if (!shape.get('_originAttrs')) {
+                shape.set('_originAttrs', Util.cloneDeep(shape.__attrs)); // 缓存原来的属性
+              }
+              if (data.indexOf(record) === -1) {
+                shape.attr('fill', '#ccc');
+              } else {
+                const originAttrs = shape.get('_originAttrs');
+                shape.__attrs = Util.cloneDeep(originAttrs);
+              }
+            });
+          },
+          onDragmove(ev) {
+            chart.hideTooltip();
+
+            const { data } = ev;
+            chart.eachShape((record, shape) => {
+              if (!shape.get('_originAttrs')) {
+                shape.set('_originAttrs', Util.cloneDeep(shape.__attrs)); // 缓存原来的属性
+              }
+              if (data.indexOf(record) === -1) {
+                shape.attr('fill', '#ccc');
+              } else {
+                const originAttrs = shape.get('_originAttrs');
+                shape.__attrs = Util.cloneDeep(originAttrs);
+              }
+            });
           }
         });
-      },
-      onBrushend() {
-        $('#g2-tootip').show();
+      } else {
+        if (type === 'clear') {
+          brush.container.clear();
+          // brush.canvas.draw();
+        } else {
+        brush.setType(type);
 
-            // this.container.clear();
-            // this.canvas.draw;
+        }
       }
+    }
+
+    $('#XY').click(ev => {
+      setBrushType('XY');
     });
-    // });
+    $('#Y').click(ev => {
+      setBrushType('Y');
+    });
+    $('#X').click(ev => {
+      setBrushType('X');
+    });
+    $('#POLYGON').click(ev => {
+      setBrushType('POLYGON');
+    });
+    $('#clear').click(ev => {
+      setBrushType('clear');
+
+      chart.eachShape((record, shape) => {
+        if (shape.get('_originAttrs')) {
+          const originAttrs = shape.get('_originAttrs');
+          shape.__attrs = Util.cloneDeep(originAttrs);
+        }
+      });
+    });
   });
 </script>
 </body>

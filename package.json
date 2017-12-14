@@ -1,7 +1,7 @@
 {
   "name": "@antv/g2-brush",
   "version": "0.0.1",
-  "description": "",
+  "description": "Select a one-, two-dimensional or irregular region using the mouse.",
   "main": "build/g2-brush.js",
   "browser": "build/g2-brush.min.js",
   "module": "index.js",
@@ -12,9 +12,9 @@
   "keywords": [
     "antv",
     "g2-brush",
-    "g2PluginBrush"
+    "g2"
   ],
-  "author": "https://github.com/orgs/antvis/people",
+  "author": "sima.zhang1990@gmail.com",
   "license": "MIT",
   "devDependencies": {
     "@lite-js/torch": "^0.2.6",

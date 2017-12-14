@@ -1,6 +1,5 @@
 /**
  * g2-brush
- * @type {Object}
  * @author sima.zhang1990@gmail.com
  */
 const Util = require('./util');
@@ -39,19 +38,14 @@ class Brush {
      */
     this.polygonPath = null;
     /**
-     * keep polygon points
-     * @type {Array}
-     */
-    this.polygonPoints = null;
-    /**
      * brush style
      * @type {Object}
      */
     this.style = {
-      fill: '#CCD6EC',
+      fill: '#C5D4EB',
       opacity: 0.3,
       lineWidth: 1,
-      stroke: '#CCD6EC'
+      stroke: '#82A6DD'
     };
     /**
      * brush type
@@ -84,7 +78,7 @@ class Brush {
      * Whether to filter the data，default is true
      * @type {Boolean}
      */
-    this.filter = cfg.dragable ? false : true;
+    this.filter = !cfg.dragable;
     this.onBrushstart = null;
     this.onBrushmove = null;
     this.onBrushend = null;
@@ -119,7 +113,7 @@ class Brush {
       this.bindCanvasEvent();
     }
 
-    if (this.chart) { // 用户传入 chart
+    if (this.chart) {
       const chart = this.chart;
       const coord = chart.get('coord');
       this.plot = {
@@ -150,40 +144,39 @@ class Brush {
 
   _onCanvasMouseDown(ev) {
     const me = this;
-    const { canvas, type, chart, brushShape, polygonPoints } = me;
-    const startPoint = { x: ev.offsetX, y: ev.offsetY }; // TODO
+    const { canvas, type, brushShape } = me;
+
+    if (!type) {
+      return;
+    }
+
+    const startPoint = { x: ev.offsetX, y: ev.offsetY };
     const isInPlot = me.plot && me.inPlot;
     const canvasDOM = canvas.get('canvasDOM');
+    const pixelRatio = canvas.get('pixelRatio');
 
     if (me.selection) {
       me.selection = null;
     }
 
     if (me.dragable && brushShape && !brushShape.get('destroyed')) { // allow drag the brushShape
-      let transPoint;
-      if (chart) {
-        const coord = chart.get('coord');
-        transPoint = coord.applyMatrix(startPoint.x, startPoint.y, 1);
-      } else {
-        transPoint = [ startPoint.x, startPoint.y ];
-      }
-      if (Util.isInside([ transPoint[0], transPoint[1] ], polygonPoints)) {
+      if (brushShape.isHit(startPoint.x * pixelRatio, startPoint.y * pixelRatio)) {
         canvasDOM.style.cursor = 'move';
         me.selection = brushShape;
         me.dragging = true;
         if (type === 'X') {
-          me.dragoffX = ev.offsetX - brushShape.attr('x');
+          me.dragoffX = startPoint.x - brushShape.attr('x');
           me.dragoffY = 0;
         } else if (type === 'Y') {
           me.dragoffX = 0;
-          me.dragoffY = ev.offsetY - brushShape.attr('y');
+          me.dragoffY = startPoint.y - brushShape.attr('y');
         } else if (type === 'XY') {
-          me.dragoffX = ev.offsetX - brushShape.attr('x');
-          me.dragoffY = ev.offsetY - brushShape.attr('y');
+          me.dragoffX = startPoint.x - brushShape.attr('x');
+          me.dragoffY = startPoint.y - brushShape.attr('y');
         } else if (type === 'POLYGON') {
           const box = brushShape.getBBox();
-          me.dragoffX = ev.offsetX - box.minX;
-          me.dragoffY = ev.offsetY - box.minY;
+          me.dragoffX = startPoint.x - box.minX;
+          me.dragoffY = startPoint.y - box.minY;
         }
 
         if (isInPlot) {
@@ -200,10 +193,11 @@ class Brush {
         }
         me.onDragstart && me.onDragstart(ev);
       }
+      me.prePoint = startPoint;
     }
 
     if (!me.dragging) { // brush start
-      me.onBrushstart && me.onBrushstart(startPoint); // 用户自定义了 brush start 事件
+      me.onBrushstart && me.onBrushstart(startPoint);
       let container = me.container;
       if (isInPlot) {
         const { start, end } = me.plot;
@@ -213,7 +207,6 @@ class Brush {
       }
       canvasDOM.style.cursor = 'crosshair';
       me.startPoint = startPoint;
-      me.polygonPoints = [];
       me.brushShape = null;
       me.brushing = true;
 
@@ -227,9 +220,8 @@ class Brush {
       }
       me.container = container;
 
-      if (type === 'POLYGON') { // 不规则筛选
+      if (type === 'POLYGON') {
         me.polygonPath = `M ${startPoint.x} ${startPoint.y}`;
-        me.polygonPoints.push([ startPoint.x, startPoint.y ]);
       }
     }
   }
@@ -244,8 +236,7 @@ class Brush {
     let currentPoint = {
       x: ev.offsetX,
       y: ev.offsetY
-    }; // TODO
-    let polygonPoints = me.polygonPoints;
+    };
     const canvasDOM = canvas.get('canvasDOM');
 
     if (brushing) {
@@ -283,9 +274,8 @@ class Brush {
         }
         rectWidth = Math.abs(startPoint.x - currentPoint.x);
         rectHeight = Math.abs(startPoint.y - currentPoint.y);
-      } else if (type === 'POLYGON') { // 不规则框选
+      } else if (type === 'POLYGON') {
         polygonPath += `L ${currentPoint.x} ${currentPoint.y}`;
-        polygonPoints.push([ currentPoint.x, currentPoint.y ]);
         me.polygonPath = polygonPath;
         if (!brushShape) {
           brushShape = container.addShape('path', {
@@ -317,13 +307,6 @@ class Brush {
             height: rectHeight
           }));
         }
-        polygonPoints = (brushShape && !brushShape.get('destroyed')) ? [
-          [ brushShape.attr('x'), brushShape.attr('y') ],
-          [ brushShape.attr('x') + brushShape.attr('width'), brushShape.attr('y') ],
-          [ brushShape.attr('x') + brushShape.attr('width'), brushShape.attr('y') + brushShape.attr('height') ],
-          [ brushShape.attr('x'), brushShape.attr('y') + brushShape.attr('height') ],
-          [ brushShape.attr('x'), brushShape.attr('y') ]
-        ] : [];
       }
 
       me.brushShape = brushShape;
@@ -332,37 +315,30 @@ class Brush {
       const selection = me.selection;
       if (selection && !selection.get('destroyed')) {
         if (type === 'POLYGON') {
-          me.selection.translate(currentPoint.x - me.dragoffX, currentPoint.y - me.dragoffY);
+          const prePoint = me.prePoint;
+          me.selection.translate(currentPoint.x - prePoint.x, currentPoint.y - prePoint.y);
         } else {
           me.dragoffX && selection.attr('x', currentPoint.x - me.dragoffX);
           me.dragoffY && selection.attr('y', currentPoint.y - me.dragoffY);
         }
-
-        polygonPoints = [
-          [ selection.attr('x'), selection.attr('y') ],
-          [ selection.attr('x') + selection.attr('width'), selection.attr('y') ],
-          [ selection.attr('x') + selection.attr('width'), selection.attr('y') + selection.attr('height') ],
-          [ selection.attr('x'), selection.attr('y') + selection.attr('height') ],
-          [ selection.attr('x'), selection.attr('y') ]
-        ];
       }
     }
 
-    me.polygonPoints = polygonPoints;
+    me.prePoint = currentPoint;
     canvas.draw();
-    const { data, shapes, xValues, yValues } = me._getSelected(polygonPoints);
+    const { data, shapes, xValues, yValues } = me._getSelected();
     const eventObj = {
       data,
       shapes,
       x: currentPoint.x,
-      y: currentPoint.y,
+      y: currentPoint.y
     };
 
-    if (me.xScale) {
-      eventObj[me.xScale.field] = xValues;
+    if (xScale) {
+      eventObj[xScale.field] = xValues;
     }
-    if (me.yScale) {
-      eventObj[me.yScale.field] = yValues;
+    if (yScale) {
+      eventObj[yScale.field] = yValues;
     }
     me.onDragmove && me.onDragmove(eventObj);
     me.onBrushmove && me.onBrushmove(eventObj);
@@ -370,7 +346,7 @@ class Brush {
 
   _onCanvasMouseUp(ev) {
     const me = this;
-    const { data, shapes, xValues, yValues, canvas, type, startPoint, chart, container, xScale, yScale, dragable } = me;
+    const { data, shapes, xValues, yValues, canvas, type, startPoint, chart, container, xScale, yScale } = me;
     const { offsetX, offsetY } = ev;
     const canvasDOM = canvas.get('canvasDOM');
     canvasDOM.style.cursor = 'default';
@@ -399,26 +375,16 @@ class Brush {
       me.onDragend && me.onDragend(eventObj);
     } else if (me.brushing) {
       me.brushing = false;
-      let currentPoint = {
-        x: offsetX,
-        y: offsetY
-      };
-      if (me.plot && me.inPlot) { // 是否限定在画布内
-        currentPoint = me._limitCoordScope(currentPoint);
-      }
       const brushShape = me.brushShape;
       let polygonPath = me.polygonPath;
-      const polygonPoints = me.polygonPoints;
 
       if (type === 'POLYGON') {
         polygonPath += 'z';
-        polygonPoints.push([ polygonPoints[0][0], polygonPoints[0][1] ]);
 
         brushShape && !brushShape.get('destroyed') && brushShape.attr(Util.mix({}, brushShape.__attrs, {
           path: polygonPath
         }));
         me.polygonPath = polygonPath;
-        me.polygonPoints = polygonPoints;
         canvas.draw();
       }
 
@@ -449,7 +415,7 @@ class Brush {
     }
   }
 
-  setMode(type) {
+  setType(type) {
     if (!type) {
       return;
     }
@@ -480,18 +446,17 @@ class Brush {
     return point;
   }
 
-  _getSelected(polygonPoints) {
-    const { chart, xScale, yScale } = this;
+  _getSelected() {
+    const { chart, xScale, yScale, brushShape, canvas } = this;
+    const pixelRatio = canvas.get('pixelRatio');
     const selectedShapes = [];
     const xValues = [];
     const yValues = [];
     const selectedData = [];
     if (chart) {
-      // const geoms = chart.getAllGeoms();
       const geoms = chart.get('geoms');
       geoms.map(geom => {
         const shapes = geom.getShapes();
-        const coord = geom.get('coord');
         shapes.map(shape => {
           let shapeData = shape.get('origin');
           if (!Array.isArray(shapeData)) { // 线图、区域图等
@@ -499,8 +464,7 @@ class Brush {
           }
 
           shapeData.map(each => {
-            const transPoint = coord.applyMatrix(each.x, each.y, 1);
-            if (Util.isInside([ transPoint[0], transPoint[1] ], polygonPoints)) {
+            if (brushShape.isHit(each.x * pixelRatio, each.y * pixelRatio)) {
               selectedShapes.push(shape);
               const origin = each._origin;
               selectedData.push(origin);

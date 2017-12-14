@@ -7,16 +7,11 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <meta name="geometry" content="diagram">
   <link rel="stylesheet" href="./assets/common.css">
-  <title>Basic</title>
+  <title>Line Chart(XY)</title>
 </head>
 
 <body>
 <div id="canvas"></div>
-<div style="width: 100%;text-align: center;">
-  <button id="x">X 框选</button>
-  <button id="y">Y 框选</button>
-  <button id="clear">清除框选</button>
-</div>
 <script src="./assets/jquery-3.2.1.min.js"></script>
 <script src="./assets/data-set.min.js"></script>
 <script src="./assets/g2.min.js"></script>
@@ -86,7 +81,6 @@
     chart.render();
 
     const brush = new Brush({
-      // chart,
       canvas: chart.get('canvas'),
       style: {
         fill: '#ccc',
@@ -94,19 +88,12 @@
       },
       chart
     });
-    $('#x').click(() => {
-      brush.setMode('x');
-    });
-    $('#y').click(() => {
-      brush.setMode('y');
-    });
-    $('#clear').click(() => {
+    chart.on('plotdblclick', () => {
       chart.get('options').filters = {};
       chart.repaint();
     });
   });
 </script>
 </body>
-
 </html>
 
