@@ -173,25 +173,25 @@
           brush.container.clear();
           // brush.canvas.draw();
         } else {
-        brush.setType(type);
+          brush.setType(type);
 
         }
       }
     }
 
-    $('#XY').click(ev => {
+    $('#XY').click(() => {
       setBrushType('XY');
     });
-    $('#Y').click(ev => {
+    $('#Y').click(() => {
       setBrushType('Y');
     });
-    $('#X').click(ev => {
+    $('#X').click(() => {
       setBrushType('X');
     });
-    $('#POLYGON').click(ev => {
+    $('#POLYGON').click(() => {
       setBrushType('POLYGON');
     });
-    $('#clear').click(ev => {
+    $('#clear').click(() => {
       setBrushType('clear');
 
       chart.eachShape((record, shape) => {
