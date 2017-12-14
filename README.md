@@ -13,15 +13,12 @@
 
 `npm install @antv/g2-brush`
 
-```js
-import Brush from '@antv/g2-brush';
-```
-
 ## Usage
 
 First of all, the brush instance must be created after the chart be rendered.
 
 ```js
+import Brush from '@antv/g2-brush';
 // ...
 chart.render();
 
@@ -32,7 +29,7 @@ new Brush({
 });
 ```
 
-### example
+### Example
 
 online demos: [https://antvis.github.io/g2-brush/demos/#](https://antvis.github.io/g2-brush/demos/#)
 
