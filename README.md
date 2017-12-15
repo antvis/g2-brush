@@ -7,6 +7,7 @@
 [![NPM downloads](http://img.shields.io/npm/dm/@antv/g2-brush.svg)](https://npmjs.org/package/@antv/g2-brush)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/antvis/g2-brush.svg)](http://isitmaintained.com/project/antvis/g2-brush "Percentage of issues still open")
 
+Chart's interaction enhancement tool for [G2](https://github.com/antvis/g2)(Please use a version greater than 3.0.1).
 
 ## Install
 
