@@ -1,9 +1,9 @@
 {
   "name": "@antv/g2-brush",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Select a one-, two-dimensional or irregular region using the mouse.",
   "main": "build/g2-brush.js",
-  "browser": "build/g2-brush.min.js",
+  "browser": "build/g2-brush.js",
   "module": "index.js",
   "repository": {
     "type": "git",
