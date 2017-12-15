@@ -11,7 +11,15 @@
 
 ## Install
 
-`npm install @antv/g2-brush`
+```bash
+$ npm install @antv/g2-brush
+```
+
+or use cdn:
+
+```html
+
+```
 
 ## Usage
 
@@ -32,6 +40,8 @@ new Brush({
 ### Example
 
 online demos: [https://antvis.github.io/g2-brush/demos/#](https://antvis.github.io/g2-brush/demos/#)
+
+![](https://gw.alipayobjects.com/zos/rmsportal/HRkzmAbHDcJYweUxDAlC.gif)
 
 ```js
 $.getJSON('./data/top2000.json', data => {

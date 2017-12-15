@@ -29,9 +29,9 @@
   }
   const chart = new G2.Chart({
     id: 'canvas',
-    width: 800,
-    height: 600,
-    padding: 80
+    forceFit: true,
+    height: window.innerHeight,
+    padding: 100
   });
   chart.source(source, {
     name: {
@@ -45,6 +45,14 @@
   });
   chart.axis('name', {
     tickLine: null,
+    label: {
+      autoRotate: false,
+      offset: 8,
+      textStyle: {
+        rotate: 90,
+        textAlign: 'start'
+      }
+    },
     grid: {
       align: 'center',
       lineStyle: {
@@ -63,7 +71,7 @@
         lineDash: null,
         stroke: '#f0f0f0'
       },
-      showFirstLine: true
+      hideFirstLine: false
     }
   });
   chart.legend(false);
