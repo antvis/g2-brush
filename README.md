@@ -1,6 +1,5 @@
 # g2-brush
 
-[![](https://img.shields.io/travis/antvis/g2-brush.svg)](https://travis-ci.org/antvis/g2-brush)
 ![](https://img.shields.io/badge/language-javascript-red.svg)
 ![](https://img.shields.io/badge/license-MIT-000000.svg)
 
