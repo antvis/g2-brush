@@ -18,7 +18,7 @@ $ npm install @antv/g2-brush
 or use cdn:
 
 ```html
-
+<script src="https://gw.alipayobjects.com/os/antv/assets/g2-brush/0.0.1/g2-brush.js"></script>
 ```
 
 ## Usage
